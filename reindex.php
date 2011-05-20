@@ -7,8 +7,8 @@
 	define('SOLR_WRITER_TYPE','json');				/* Writer Type - output type.  Currently only 'json' is supported. */
 	
 	/* Performance Options */
-	define('PAGINATE_ROWS',100);					/* Number of docs to show per page */
-	define('COMMIT_FREQUENCY',100);					/* How many records to commit after.  Set to 0 to commit all after processing. */
+	define('PAGINATE_ROWS',1000);					/* Number of docs to show per page */
+	define('COMMIT_FREQUENCY',10);				/* How many pages to commit after. */
 	define('CURL_TIMEOUT',60);						/* How long until curl request times out.  Set to 0 for unlimited. */
 	
 	/* Re-Indexing Options */
@@ -191,14 +191,23 @@
 	
 	/* Main application loop */	
 	$doc_cnt=$params['start'];
+	$page_cnt=0;
 	$total_docs=0;
 	
 	while(($data = Solr::get($params)) !== false) {
 		$total_docs = $data['response']['numFound'];
-						
+		$page_cnt++;
+		
+		//Initialize solr wrapper
+		$solr_array = array(
+			'add' => array()
+		);
+		
+		//Loop through returned documents
 		foreach($data['response']['docs'] as $doc) {
+			//Increment document count
 			$doc_cnt++;
-			
+						
 			//See if ENDINDEX has been reached
 			$end_of_index = (ENDINDEX > 0 && $doc_cnt == ENDINDEX);
 			
@@ -216,40 +225,40 @@
 				}
 			}
 						
-			//Post data to Solr
-			$solr_array = array(
-				'add' => array(
-					'doc' => $doc
-				)
+			//Append data to solr array
+			$solr_array['add'][] = array(
+				'doc' => $doc
 			);
-									
-			$response = Solr::post($solr_array);
 			
-			if($response !== 0) {
-				echo "Error processing document ID: " . $solr_array['add']['doc']['id'] . "\.  Response: $response.\n";
-			}
 			
-			//Commit data
-			if($doc_cnt % COMMIT_FREQUENCY == 0 || $end_of_index) {
-				$response = Solr::commit();
-				
-				if($response !== 0) {
-					echo "Error committing data to Solr!  Response: $response.\n";
-				} else {
-					echo "Committed Data - $doc_cnt of $total_docs (" . date("c") . ") " . number_format(($doc_cnt/$total_docs)*100,4) . "% Complete.\n";
-				}
-				
-				//Force end if ENDINDEX is reached
-				if($end_of_index) {
-					$doc_cnt = $total_docs+1;
-				}
-			}
+			//Stop if we reached the end of the index
+			if($end_of_index === true) {
+				//Force next pagination request to end
+				$params['start'] = $total_docs;
+				break;
+			}			
 		} //foreach docs
 		
+		//Post page of data
+		$response = Solr::post($solr_array);
+		if($response !== 0) {
+			echo "Error processing document ID: " . $solr_array['add']['doc']['id'] . "\.  Response: $response.\n";
+		}
+		
+		//Commit page(s) of data
+		if($page_cnt % COMMIT_FREQUENCY == 0 || $end_of_index) {
+			$response = Solr::commit();
+			
+			if($response !== 0) {
+				echo "Error committing data to Solr!  Response: $response.\n";
+			} else {
+				echo "Committed Data - $doc_cnt of $total_docs (" . date("c") . ") " . number_format(($doc_cnt/$total_docs)*100,4) . "% Complete.\n";
+			}
+		}
+		
+		//Increment
 		$params['start'] += PAGINATE_ROWS;
 	}
-		
-
 ?>
 
                               Apache License
