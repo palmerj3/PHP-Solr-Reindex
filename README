@@ -1,0 +1,22 @@
+PHP Solr Re-Index Tool
+
+Author: Jason Palmer (http://www.jason-palmer.com)
+Owner: Toasted Snow (http://www.toastedsnow.com/)
+
+[description]
+
+Solr is an amazing database, however we often have to update the schema and this can be troublesome.  It is often not possible to retain the original data that was posted to Solr, so what are your options?
+
+This script can help you to systematically re-index your Solr documents by downloading them and re-submitting the stored (stored="true" as defined in the schema.xml) fields.
+
+[configuration]
+
+Begin by opening the file "reindex.php".
+
+At the top of the file you will find many different configuration options which can help you achieve the proper re-indexing for your needs.
+
+[future]
+
+This script will be updated soon to include:
+	* Support for basic authentication
+	* Support for multi-valued fields
