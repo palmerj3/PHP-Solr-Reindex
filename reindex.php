@@ -7,8 +7,8 @@
 	define('SOLR_WRITER_TYPE','json');				/* Writer Type - output type.  Currently only 'json' is supported. */
 	
 	/* Performance Options */
-	define('PAGINATE_ROWS',1000);					/* Number of docs to show per page */
-	define('COMMIT_FREQUENCY',10);				/* How many pages to commit after. */
+	define('PAGINATE_ROWS',20);						/* Number of docs to show per page */
+	define('COMMIT_FREQUENCY',100);					/* How many pages to commit after. */
 	define('CURL_TIMEOUT',60);						/* How long until curl request times out.  Set to 0 for unlimited. */
 	
 	/* Re-Indexing Options */
