@@ -1,13 +1,16 @@
 <?php
 	/* Solr Connectivity */
-	define('SOLR_HOST','http://0.0.0.0');		/* Hostname */
+	define('SOLR_HOST','http://0.0.0.0');			/* Hostname */
 	define('SOLR_PORT','8983');						/* Port */
 	define('SOLR_PATH','/solr/');					/* Default Solr path (usually /solr/) */
 	define('SOLR_CORE','my_core/');					/* Core */
 	define('SOLR_WRITER_TYPE','json');				/* Writer Type - output type.  Currently only 'json' is supported. */
 	
+	/* Solr Version Flag */
+	define('SOLR_VERSION', '3.1');					/* Define Solr version.  3.2 and higher allow more optimized JSON formatting. */
+	
 	/* Performance Options */
-	define('PAGINATE_ROWS',1000);						/* Number of docs to show per page */
+	define('PAGINATE_ROWS',1000);					/* Number of docs to show per page */
 	define('COMMIT_FREQUENCY',10);					/* How many pages to commit after. */
 	define('CURL_TIMEOUT',60);						/* How long until curl request times out.  Set to 0 for unlimited. */
 	
@@ -199,9 +202,12 @@
 		$page_cnt++;
 		
 		//Initialize solr wrapper
-		$solr_array = array(
-			'add' => array()
-		);
+		$solr_array = array();
+		
+		//If Solr is 3.2 or higher add the 'add' => 'doc' wrapper
+		if(SOLR_VERSION >= 3.2) {
+			$solr_array = array('add' => array('doc' => array()));
+		}
 		
 		//Loop through returned documents
 		foreach($data['response']['docs'] as $doc) {
@@ -225,10 +231,12 @@
 				}
 			}
 						
-			//Append data to solr array
-			$solr_array['add'][] = array(
-				'doc' => $doc
-			);
+			//Append data to solr array			
+			if(SOLR_VERSION >= 3.2) {
+				$solr_array['add']['doc'][] = $doc;
+			} else {
+				$solr_array[] = array('add' => array('doc' => $doc));
+			}
 			
 			
 			//Stop if we reached the end of the index
@@ -242,7 +250,7 @@
 		//Post page of data
 		$response = Solr::post($solr_array);
 		if($response !== 0) {
-			echo "Error processing document ID: " . $solr_array['add']['doc']['id'] . "\.  Response: $response.\n";
+			echo "Error processing document ID: " . $doc['id'] . "\.  Response: $response.\n";
 		}
 		
 		//Commit page(s) of data
@@ -259,8 +267,8 @@
 		//Increment
 		$params['start'] += PAGINATE_ROWS;
 	}
-?>
 
+/*
                               Apache License
                         Version 2.0, January 2004
                      http://www.apache.org/licenses/
@@ -462,3 +470,4 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+*/
